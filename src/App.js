@@ -2,11 +2,12 @@ import React from "react";
 import P5Wrapper from "react-p5-wrapper";
 import "./App.css";
 
+import mouse from "./sketches/mouse";
 import loop from "./sketches/loop";
 import blendMode from "./sketches/blendMode";
 import shapes from "./sketches/shapes";
 
-const sketches = [loop, blendMode, shapes];
+const sketches = [mouse, loop, blendMode, shapes];
 
 function App() {
   const [currentSketch, setCurrentSketch] = React.useState(0);
