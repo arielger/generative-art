@@ -16,8 +16,6 @@ export default function sketch(p) {
     p.stroke(255);
     p.strokeWeight(1);
 
-    const dt = p.deltaTime / 1000;
-
     const blockSize = 500;
     const gridSize = 10;
     const cellSize = blockSize / gridSize;
