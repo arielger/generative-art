@@ -1,7 +1,3 @@
-import SimplexNoise from "simplex-noise";
-
-const simplex = new SimplexNoise();
-
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
@@ -18,8 +14,6 @@ export default function sketch(p) {
 
       const x = p.lerp(0, p.width, lineXInterpolation);
       let y = p.lerp(0, p.height, lineYInterpolation);
-
-      //   console.log("noise", simplex.noise2D(1, 5));
 
       y += getRandomInt(100);
 

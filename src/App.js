@@ -2,14 +2,14 @@ import React from "react";
 import P5Wrapper from "react-p5-wrapper";
 import "./App.css";
 
-import noise2 from "./sketches/noise2";
+import noiseMidi from "./sketches/noise-midi";
 import noise from "./sketches/noise";
 import mouse from "./sketches/mouse";
 import loop from "./sketches/loop";
 import blendMode from "./sketches/blendMode";
 import shapes from "./sketches/shapes";
 
-const sketches = [noise2, noise, mouse, loop, blendMode, shapes];
+const sketches = [noiseMidi, noise, mouse, loop, blendMode, shapes];
 
 function App() {
   const [currentSketch, setCurrentSketch] = React.useState(0);
