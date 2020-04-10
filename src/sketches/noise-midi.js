@@ -2,31 +2,92 @@ import SimplexNoise from "simplex-noise";
 
 const simplex = new SimplexNoise();
 
-// Resources for this experiment
+// 📚 Resources for this experiment
+
 // What is OpenSimplex noise? -->  https://www.youtube.com/watch?v=Lv9gyZZJPE0
 // Perlin noise --> http://web.archive.org/web/20160530124230/http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
 
-const frequencyRange = [0.5, 5];
-const amplitudeRange = [0.1, 2];
+let configParams = {
+  frequency: {
+    value: 0.5,
+    range: [0.5, 5],
+  },
+  amplitude: {
+    value: 0.05,
+    range: [0.05, 0.5],
+  },
+  strokeWeight: {
+    value: 0.2,
+    range: [0.2, 10],
+  },
+  backgroundFill: {
+    value: 255,
+    range: [255, 0],
+  },
+  velocity: {
+    value: 3000,
+    range: [3000, 100],
+  },
+  lines: {
+    value: 5,
+    range: [5, 20],
+  },
+  color1: {
+    value: 0,
+    range: [0, 1],
+  },
+  color2: {
+    value: 0,
+    range: [0, 1],
+  },
+};
 
+/* MIDI CONFIGURATION (using Impact LX88+ keyboard) */
+
+const CONFIGURATION_KNOB_RANGE = [30, 37];
+const CONFIGURATION_VALUES_RANGE = [0, 127];
 const CONFIGURATION_COMMAND_CODE = 191;
 
-let lineSteps = 200;
-
-const handleMidiInput = (message) => {
+const handleMidiInput = (p) => (message) => {
   const [command, knobNumber, value] = message.data;
-  // Only enable tried piano knobs
+
   if (
     command === CONFIGURATION_COMMAND_CODE &&
-    knobNumber >= 30 &&
-    knobNumber <= 37
+    knobNumber >= CONFIGURATION_KNOB_RANGE[0] &&
+    knobNumber <= CONFIGURATION_KNOB_RANGE[1]
   ) {
-    lineSteps = value;
+    const configParamsKeys = Object.keys(configParams);
+    // Map knob number to 0 to n number
+    const knobIndex = knobNumber - CONFIGURATION_KNOB_RANGE[0];
+
+    // Automatically change config param based on configParams order
+    const configToChange = configParamsKeys[knobIndex];
+
+    // If there is no config for the knob just return
+    if (!configToChange) return;
+
+    // Map knob value (1 to 127) to variable config range
+    const mappedValue = p.map(
+      value,
+      ...CONFIGURATION_VALUES_RANGE,
+      ...configParams[configToChange].range
+    );
+    configParams[configToChange].value = mappedValue;
   }
 };
 
+/******************/
+
+let lineSteps = 200;
+
 export default function sketch(p) {
-  p.drawNoiseLine = function ({ lineIndex, lines, time, frequency, amplitude }) {
+  p.drawNoiseLine = function ({
+    lineIndex,
+    lines,
+    time,
+    frequency,
+    amplitude,
+  }) {
     const lineYInterpolation = lineIndex / (lines - 1);
 
     p.beginShape();
@@ -41,14 +102,17 @@ export default function sketch(p) {
         lineXInterpolation
       );
 
-      const noise =
-        simplex.noise3D(
-          lineXInterpolation * frequency + time,
-          lineYInterpolation * frequency,
-          time
-        ) * amplitude;
+      const noise = simplex.noise3D(
+        lineXInterpolation * frequency,
+        lineYInterpolation * frequency,
+        time
+      );
 
-      y += noise;
+      y += noise * amplitude;
+
+      const fromColor = p.color(222, 16, 134);
+      const toColor = p.color(50, 186, 234);
+      p.stroke(p.lerpColor(fromColor, toColor, noise));
 
       p.vertex(x, y);
     }
@@ -58,8 +122,8 @@ export default function sketch(p) {
   p.setup = function () {
     p.createCanvas(p.windowWidth, p.windowHeight);
 
-    p.mouseX = p.width / 2;
-    p.mouseY = p.height / 2;
+    // p.mouseX = p.width / 2;
+    // p.mouseY = p.height / 2;
 
     if (navigator.requestMIDIAccess) {
       navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
@@ -68,7 +132,7 @@ export default function sketch(p) {
         console.log(midiAccess);
 
         for (var input of midiAccess.inputs.values()) {
-          input.onmidimessage = handleMidiInput;
+          input.onmidimessage = handleMidiInput(p);
         }
       }
 
@@ -87,20 +151,25 @@ export default function sketch(p) {
   };
 
   p.draw = function () {
-    p.background(0);
+    p.background(0, 0, 0, configParams.backgroundFill.value);
     p.noFill();
-    p.strokeWeight(3);
-    p.stroke(255);
+    p.strokeWeight(configParams.strokeWeight.value);
+    const time = p.millis() / configParams.velocity.value;
 
-    const time = p.millis() / 1000;
+    const lines = configParams.lines.value;
 
-    const lines = 10;
-
-    const frequency = p.lerp(frequencyRange[0], frequencyRange[1], p.mouseX / p.width);
-    const amplitude = p.lerp(amplitudeRange[0], amplitudeRange[1], p.mouseY / p.height);
+    // Uncomment code to activate mouse interaction
+    // const frequency = p.lerp(frequencyRange[0], frequencyRange[1], p.mouseX / p.width);
+    // const amplitude = p.lerp(amplitudeRange[0], amplitudeRange[1], p.mouseY / p.height);
 
     for (let index = 0; index < lines; index++) {
-      p.drawNoiseLine({ lineIndex: index, lines, time: time * 0.5, frequency, amplitude: amplitude * p.height });
+      p.drawNoiseLine({
+        lineIndex: index,
+        lines,
+        time: time * 0.5,
+        frequency: configParams.frequency.value,
+        amplitude: configParams.amplitude.value * p.height,
+      });
     }
   };
 }
